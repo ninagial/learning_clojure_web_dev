@@ -22,4 +22,19 @@
                          ))
     (println " done")))
 
+(defn map-tag [tag xs]
+  (map (fn [x] [tag x]) xs))
 
+(defn query-all [] 
+  "poor man's controller - returns list of hashmaps"
+  (jdbc/query db-spec ["SELECT * FROM fruit"]))
+
+(defn list-to-table [x]  
+  "poor man's view"
+  (list [:table [:tr (map-tag :th ["Name" "Appearance" "Cost"])] [:tr (map-tag :td (query-all))]]       
+  x))
+
+(defn -main [] 
+  (-> 
+    (list-to-table (query-all))
+    first))
