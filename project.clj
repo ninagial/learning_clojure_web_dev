@@ -10,4 +10,4 @@
                  [org.clojure/java.jdbc "0.4.1"]
                  [org.postgresql/postgresql "9.4-1201-jdbc41"]]
   :repl-options {:init-ns lrn_jdbc2.core}
-  :main lrn_jdbc.core)
+  :main lrn_jdbc2.core)

@@ -1,5 +1,13 @@
 (ns lrn_jdbc2.core
-  (:require [clojure.java.jdbc :as jdbc]))
+  (:use [compojure.core :only (defroutes GET)]
+        [ring.adapter.jetty :as ring]
+        )
+        
+  (:require [clojure.java.jdbc :as jdbc]
+            [compojure.handler :as handler]
+            [hiccup.page :as page]
+            )
+  (:gen-class))
 
 (def db-spec "postgresql://localhost:5432/fruit")
 
@@ -22,19 +30,39 @@
                          ))
     (println " done")))
 
+; this is the part I KEEP getting wrong
 (defn map-tag [tag xs]
   (map (fn [x] [tag x]) xs))
 
+(defn base-layout [title body]
+  [:html 
+   [:head
+    [:title title]]
+   [:body
+    body]]
+  )
+
 (defn query-all [] 
   "poor man's controller - returns list of hashmaps"
-  (jdbc/query db-spec ["SELECT * FROM fruit"]))
+  (let [db-resp (jdbc/query db-spec ["SELECT name,appearance,cost FROM fruit"])]
+            (list [:table [:tr (map-tag :th ["Name" "Color" "Cost"])(map-tag :tr (map (fn [row] (map-tag :td [(:name row) (:appearance row) (:cost row)])) db-resp))]])
+              ) 
+    )
 
-(defn list-to-table [x]  
-  "poor man's view"
-  (list [:table [:tr (map-tag :th ["Name" "Appearance" "Cost"])] [:tr (map-tag :td (query-all))]]       
-  x))
+(defn index []
+  (page/html5 (base-layout "Fruit" (query-all))))
 
-(defn -main [] 
-  (-> 
-    (list-to-table (query-all))
-    first))
+(defroutes routes
+  (GET "/" [] (index))
+  )
+
+(def application (handler/site routes))
+
+(defn start [port]
+  (run-jetty application {:port port
+                          :join? false}))
+
+(defn -main []
+  (migrate)
+  (let [port (Integer/parseInt (or (System/getenv "PORT") "8080"))]
+    (start port)))
